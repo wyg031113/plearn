@@ -1,0 +1,106 @@
+\chapter{附录}
+\mylineskip
+%minted使用参考ftp://ftp.dante.de/tex-archive/macros/latex/contrib/minted/minted.pdf
+{\noindent C语言结构体用法}
+\usemintedstyle[c++]{vs} %查看支持的样式：命令行中执行pygmentize -L styles; 支持的语言： pygmentize -L lexers
+\renewcommand{\theFancyVerbLine}{\sffamily\textcolor[rgb]{0.6,0.2,0.3}{\normalsize\oldstylenums{\arabic{FancyVerbLine}}}}
+\begin{minted}[linenos,firstnumber=11, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt]{c++}
+
+#include <stdio.h>
+#include <string.h>
+
+struct Books
+{
+    char  title[50];
+    char  author[50];
+    char  subject[100];
+    int   book_id;
+};
+
+int main( )
+{
+    struct Books Book1;        /* 声明 Book1，类型为 Books */
+    struct Books Book2;        /* 声明 Book2，类型为 Books */
+    
+    /* Book1 详述 */
+    strcpy( Book1.title, "C Programming");
+    strcpy( Book1.author, "Nuha Ali"); 
+    strcpy( Book1.subject, "C Programming Tutorial");
+    Book1.book_id = 6495407;
+    
+    /* Book2 详述 */
+    strcpy( Book2.title, "Telecom Billing");
+    strcpy( Book2.author, "Zara Ali");
+    strcpy( Book2.subject, "Telecom Billing Tutorial");
+    Book2.book_id = 6495700;
+    
+    /* 输出 Book1 信息 */
+    printf( "Book 1 title : %s\n", Book1.title);
+    printf( "Book 1 author : %s\n", Book1.author);
+    printf( "Book 1 subject : %s\n", Book1.subject);
+    printf( "Book 1 book_id : %d\n", Book1.book_id);
+    
+    /* 输出 Book2 信息 */
+    printf( "Book 2 title : %s\n", Book2.title);
+    printf( "Book 2 author : %s\n", Book2.author);
+    printf( "Book 2 subject : %s\n", Book2.subject);
+    printf( "Book 2 book_id : %d\n", Book2.book_id);
+    
+    return 0;
+}
+\end{minted}
+
+{\noindent 示例2 C\#代码}
+\begin{minted}[mathescape,
+    linenos,
+    numbersep=5pt,
+    gobble=2,
+    frame=lines,
+    framesep=2mm]{csharp}
+    string title = "This is a Unicode π in the sky"
+    /*
+    Defined as $\pi=\lim_{n\to\infty}\frac{P_n}{d}$ where $P$ is the perimeter
+    of an $n$-sided regular polygon circumscribing a
+    circle of diameter $d$.
+    */
+    const double pi = 3.1415926535
+\end{minted}
+
+
+%使用listings
+\lstset{
+    columns=fixed,       
+    numbers=left,                                        % 在左侧显示行号
+    numberstyle=\tiny\color{gray},                       % 设定行号格式
+    frame=none,                                          % 不显示背景边框
+    backgroundcolor=\color[RGB]{245,245,244},            % 设定背景颜色
+    keywordstyle=\color[RGB]{40,40,255},                 % 设定关键字颜色
+    numberstyle=\footnotesize\color{darkgray},           
+    commentstyle=\it\color[RGB]{0,96,96},                % 设置代码注释的格式
+    stringstyle=\rmfamily\slshape\color[RGB]{128,0,0},   % 设置字符串格式
+    showstringspaces=false,                              % 不显示字符串中的空格
+    language=c++,                                        % 设置语言
+}
+\begin{lstlisting}[language={c++}]
+#include  <stdio.h>
+
+int main(){
+    int  sum=0;
+    int  num=1;
+    int  sum2=0;
+    int  num2=2;
+    while(num<100){
+        sum=sum+num;
+        num=num+2;
+    }
+    printf("奇数和为:%d\n",sum);
+    
+    while(num2<=100){
+        sum2=sum2+num2;
+        num2=num2+2;
+    }
+    printf("偶数和为：%d\n",sum2);
+}
+\end{lstlisting}
+
+\inputminted[breaklines=true]{c}{source/01.c}

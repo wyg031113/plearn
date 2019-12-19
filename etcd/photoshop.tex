@@ -1,0 +1,44 @@
+\include{bookformat}
+\usepackage{pdfpages}
+\include{tables}
+\title{\Huge\color{green}\songti Photoshop学习笔记}
+\author{王永刚}
+\date{\today}
+\begin{document}
+	\frontmatter
+	%标题
+	\maketitle
+	\thispagestyle{empty} 
+	%封面
+	\includepdf[pages=-]{cover/cover.pdf}
+	%罗马数字页
+	\setcounter{page}{1} 
+	\pagenumbering{roman}
+
+	\include{abstract}	%摘要
+	
+	\renewcommand\listfigurename{插图索引}
+	\listoffigures
+	\addcontentsline{toc}{chapter}{插图索引}
+	
+	\renewcommand\listtablename{表格索引}
+	\listoftables
+	\addcontentsline{toc}{chapter}{表格索引}
+	\include{abbreviation}
+	%目录
+	\tableofcontents
+
+	\mainmatter
+	%开始第一章
+	\pagenumbering{arabic}
+	\setcounter{page}{1} 
+	\include{chapter1-photoshop}
+	\include{chapter2-webdesign}
+	\backmatter
+	
+	\appendix
+	\include{chapter-refs}
+	\include{chapter-appendix}
+	\include{chapter-thanks}
+	\include{chapter-author}
+\end{document}

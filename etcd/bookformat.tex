@@ -1,0 +1,139 @@
+\documentclass[12pt,a4paper,UTF8,AutoFakeBold]{ctexbook} %注意AutoFackBold打开用来加粗中文字体
+\usepackage{geometry}
+\geometry{a4paper,top=3cm,bottom=2cm} %面边距设置
+\usepackage[cache=false]{minted}  % 代码高亮 必须在编译命令后面加上x -shell-escape; 在options->Config..->command
+\usepackage{listings} %代码高亮的另一种实现
+\usepackage{xcolor}
+\usepackage{xeCJK}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{ctexcap}
+\usepackage{fancyhdr}
+\usepackage{caption2}
+\usepackage{cite}
+\usepackage[colorlinks=true, linkcolor=blue]{hyperref} %目录和交叉引用超链接
+\usepackage{titletoc}
+\usepackage{enumitem}
+\renewcommand{\theequation}{\thechapter-\arabic{equation}} %设置公式标题格式为1-1
+%------------------目录格式设置---------------------------------
+%目录标题字体为黑体，字号为三号，居中排列，行距为固定值20磅，段落间距为段前24磅，段后18磅；目录内容中一级标题字体为黑体，字号为小四号，其余标题字体为宋体，字号为小四号。
+%参见http://blog.csdn.net/golden1314521/article/details/39926135
+\titlecontents{chapter}[4em]{\addvspace{2pt}\filright\heiti\zihao{-4}}
+{\contentspush{\thecontentslabel\ }}
+{}{\titlerule*[.5pc]{$\cdot$}\contentspage}
+
+\titlecontents{section}[6em]{\filright\songti\zihao{-4}}
+{\contentspush{\thecontentslabel\ }}
+{}{\titlerule*[.5pc]{$\cdot$}\contentspage}
+
+\titlecontents{subsection}[8em]{\filright\songti\zihao{-4}}
+{\contentspush{\thecontentslabel\ }}
+{}{\titlerule*[.5pc]{$\cdot$}\contentspage}
+
+%-------------------------------浮动对象间距------------------------------------------
+%页面的顶部或底部浮体与文本之间http://bbs.ctex.org/forum.php?mod=viewthread&tid=70899
+\setlength{\textfloatsep} {-10pt} 
+%页面顶部或者底部浮体的距离 http://www.ctex.org/documents/latex/graphics/node72.html
+\setlength{\floatsep}{0pt} 
+%页面中浮体图形与上下方距离http://www.ctex.org/documents/latex/graphics/node72.html
+\setlength{\intextsep}{10pt} 
+
+%-------------------------------图表设置----------------------------------------------
+\renewcommand{\captionfont}{\songti\zihao{5}} %图标题5号
+\captionsetup{format=hang, aboveskip=0pt, belowskip=0pt}
+%插入图片的命令
+\newcommand{\myfig}[4]{%#1标题 #2label #3宽度 #4img_path
+		\begin{figure}[!ht]
+		\begin{center}
+			\setlength{\belowcaptionskip}{10pt}
+			\includegraphics[width=#3\textwidth]{#4}
+			\caption{#1}\label{#2}
+		\end{center}
+	\end{figure}
+}
+
+%插入表格的命令
+%#1标题 #2label #3col_format #4 table_content
+\newenvironment{mytable}[3]{
+	\begin{table}[!ht]
+		\zihao{5}\centering
+		\caption{#1}\label{#2}
+		\begin{tabular}{#3}	
+		}{
+		\end{tabular}
+	\end{table}
+}
+
+%举一表插入的例子OpenFlow Type table
+\newcommand{\oftypetable}{
+	\newcounter{rownum}
+	\newcommand{\rown}{\stepcounter{rownum}\therownum}
+	\begin{mytable}{OpenFLow包格式}{tab:oftype}{|c|c|c|}
+		\hline
+		序号&类型&描述\\ \hline
+		\rown &  Packet-In   & 发送到控制器\\ \hline
+		\rown &  Packet-Out  & 发到交换机 \\ \hline
+		\rown &  Flow-Mod    & 修改流表项，增删改查,控制器发送到交换机的 \\ \hline
+	\end{mytable}
+}
+
+
+%引用学习 http://www.latexstudio.net/archives/3297
+%http://blog.sina.com.cn/s/blog_7101508c0100tgg4.html
+%------------------------------页眉面脚-----------------------------------------
+%页眉面脚 参见《latex2e完全学习手册》4.4版式 页眉与页脚
+\newcommand{\makeheadrule}{%
+	\makebox[0pt][l]{\rule[0.55\baselineskip]{\headwidth}{0.4pt}}%
+	\rule[0.7\baselineskip]{\headwidth}{0.4pt}}
+\renewcommand{\headrule}{%
+	{\if@fancyplain\let\headrulewidth\plainheadrulewidth\fi
+		\makeheadrule}}
+\makeatother
+\pagestyle{fancy}
+\fancyhead[EL,OL,ER,OR]{}
+\fancyhead[EC]{\zihao{5}西安电子科技大学硕士论文}
+\fancyhead[OC]{\zihao{5}\leftmark}
+\fancyfoot[C]{\thepage}
+
+
+%文档
+%CTEX小手册http://www.docin.com/p-57589811.html
+%手册 http://www.ctex.org/documents/latex/graphics/node2.html
+%http://www.docin.com/p-1227477687.html?docfrom=rrela
+
+%-------------------------------全文字体、字号-------------------------------------
+%字体设置参考http://blog.csdn.net/archielau/article/details/7960229
+\setmainfont{Times New Roman}
+\setCJKmainfont{SimSun}
+%全文字号小四=12.1pt
+\renewcommand{\normalsize}{\fontsize{12.1pt}{\baselineskip}\selectfont}
+
+%-------------------------段间距、行间距、首行缩进----------------------------------
+%段落设置 需要在每个独立的文件中包含的
+\newcommand{\mylineskip}{\setlength{\baselineskip}{20pt}} %行间距20磅
+\mylineskip
+%LaTeX技巧459：LaTeX中常见段落格式的设定-字间距，行间距，段间距，缩进 http://blog.sina.com.cn/s/blog_5e16f1770100ns4r.html
+%段间距设置段前后都是0磅 
+\setlength{\parskip}{0pt}
+%首行缩进两字符
+\CTEXindent
+
+%---------------------------------三级标题格式--------------------------------------
+%标题设置
+%ctexset 用法参见：http://www.docin.com/p-759953748.html
+%一级标题居中排列，字体为黑体，字号为三号，行距为固定值20磅，段落间距为段前24磅，段后18磅
+\CTEXsetup[beforeskip={24pt}, afterskip={18pt}, format={\huge\heiti\zihao{3}\centering\color{cyan}}]{chapter} %一级标题黑体三号
+
+%二级标题不缩进，字体为宋体加粗，字号为小三号，行距为固定值20磅，段落间距为段前18磅，段后12磅；
+\CTEXsetup[beforeskip={18pt},afterskip={12pt},format={\Large\bf\songti\zihao{-3}\flushleft\color{blue}}]{section}
+
+%三级标题缩进2字符，字体为宋体，字号为四号加粗，行距为固定值20磅，段落间距为段前12磅，段后6磅；
+\CTEXsetup[indent={2\ccwd},beforeskip={12pt},afterskip={6pt},format={\large\bf\songti\zihao{4}\color{olive}}]{subsection}
+
+%-------------------------------设置列表格式-----------------------------------------
+\setenumerate[1]{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=5pt}
+\setitemize[1]{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=5pt}
+\setdescription{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=5pt}
+
+%---------------------------------个人偏好-------------------------------------------
+\newcommand{\tab}{\ \ \ \ }
