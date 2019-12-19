@@ -1,7 +1,32 @@
 
 \mylineskip
-\chapter{photoshop基本功能}\label{chaper:ch1}
-\section{phtotshop简介}
+\chapter{etcd编译安装}\label{chaper:ch1}
+\section{golang环境}
+当然在安装etcd前要先安装go。并且设置好GOPATH。可以用apt,yum或者源码安装，下载二进制安装等方式。
+\myfig{golang环境变量}{fig:s1}{0.9}{images/golang_env.png}
+
+\section{etcd编译安装}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=16pt]{shell}
+#etcd编译
+mkdir -p  $GOPATH/src/go.etcd.io/
+cd $GOPATH/src/go.etcd.io/
+git clone https://github.com/etcd-io/etcd.git
+./build
+./bin/etcd
+\end{minted}
+
+\myfig{etcd运行}{fig:s2}{0.9}{images/etcd_starting.png}
+
+\section{etcd编译文件build分析}
+	etcd的build文件如图\ref{fig:s3}所示。 golang的编译非常简洁快速。直接编译出了etcd和etcdctl两个可执行文件。
+
+\myfig{etcd build}{fig:s3}{0.9}{images/etcd_build.png}
+
+\section{etcd版本}
+	本书开写时的etcd的最新版本。如果看代码，要用与本书一致比较好。
+\myfig{etcd版本}{fig:s4}{0.9}{images/etcd_version.png}
+
+
 Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
 Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方

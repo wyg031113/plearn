@@ -1,7 +1,7 @@
 \include{bookformat}
 \usepackage{pdfpages}
 \include{tables}
-\title{\Huge\color{green}\songti Photoshop学习笔记}
+\title{\Huge\color{green}\songti ETCD学习笔记}
 \author{王永刚}
 \date{\today}
 \begin{document}
@@ -10,21 +10,21 @@
 	\maketitle
 	\thispagestyle{empty} 
 	%封面
-	\includepdf[pages=-]{cover/cover.pdf}
+	%\includepdf[pages=-]{cover/cover.pdf}
 	%罗马数字页
 	\setcounter{page}{1} 
 	\pagenumbering{roman}
 
-	\include{abstract}	%摘要
+	%\include{abstract}	%摘要
 	
-	\renewcommand\listfigurename{插图索引}
-	\listoffigures
-	\addcontentsline{toc}{chapter}{插图索引}
+	%\renewcommand\listfigurename{插图索引}
+	%\listoffigures
+	%\addcontentsline{toc}{chapter}{插图索引}
 	
-	\renewcommand\listtablename{表格索引}
-	\listoftables
-	\addcontentsline{toc}{chapter}{表格索引}
-	\include{abbreviation}
+	%\renewcommand\listtablename{表格索引}
+	%\listoftables
+	%\addcontentsline{toc}{chapter}{表格索引}
+	%\include{abbreviation}
 	%目录
 	\tableofcontents
 
@@ -32,7 +32,7 @@
 	%开始第一章
 	\pagenumbering{arabic}
 	\setcounter{page}{1} 
-	\include{chapter1-photoshop}
+	\include{chapter1-etcd_start}
 	\include{chapter2-webdesign}
 	\backmatter
 	
