@@ -1,0 +1,9 @@
+
+\mylineskip
+\chapter{etcd server分析}
+\section{etcd启动调用关系}
+etcd服务器启动，会启动 很模块，对外主要是处理客户端请求，对内有etcd多个服务器进程之间通信，
+也有etcd服务器内部的功能，比如KV存储，WAL日志等。源码分析第一步，搞清楚etcd的启动初始化步骤。
+见图\ref{fig:ch2s1}和图\ref{fig:ch2s2}。
+\myfig{etcd的dlv调用栈}{fig:ch2s1}{0.9}{images/etcd_start_stack_trace.png}
+\myfig{etcd的启动初始化}{fig:ch2s2}{0.9}{images/etcd_dot/etcd_start.png}

@@ -1,0 +1,12 @@
+digraph g {
+    rankdir="LR";
+    {
+        rank="same";
+        a0 -> a1 -> a2;
+    }
+    {
+        rank="same";
+        b0 -> b1 -> b2;
+    }
+    a1 -> b1;
+}

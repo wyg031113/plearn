@@ -1,0 +1,35 @@
+digraph start {
+    graph [fontname="SimHei"]
+    node [shape=box, fontname="Microsoft Yahei" color=red]
+    edge [color=blue]
+    label="启动etcd"
+    rankdir="TB"
+    
+    main [label="main.go:\n Main()" shape=circle style=filled color=green]
+    
+    etcdmain_main               [label="etcdmain/main.go:\n Main()"]
+    etcdmain_startEtcdProxy     [label="etcdmain/etcd.go:\n startEtcdOrProxyV2()"]
+    svrcfg                      [label="cfg := newConfig()"]
+    etcdcfg                     [label="srvcfg := etcdserver.ServerConfig{}"]
+    etcdmain_StartEtcd          [label="etcdmain/etcd.go:\n startEtcd(cfg *embed.Config)"]
+    embed_StartEtcd             [label="embed/etcd.go:\n StartEtcd(inCfg *Config)"]
+    embed_Etcd                  [label="e = &Etcd{cfg: *inCfg, \nstopc: make(chan struct{})}"]
+    etcdserver_new              [label="etcdserver/server.go:\n NewServer(srvcfg)"]
+    etcdserver_Start            [label="etcdserver/server.go:\n EtcdServer.Start()"]
+    etcdserver_start            [label="etcdserver/server.go:\n EtcdServer.start()"]
+    etcdserver_run              [label="etcdserver/server.go:\n go EtcdServer.run()"]
+    serve_client                [label="embed/etcd.go:\n Etcd.serveClients()"]
+    rpc_svr                     [label="grpc.NewServer\n pb.RegisterKVServer\n pb.RegisterWatchServer\n pb.RegisterLeaseServer\n pb.RegisterClusterServer"]
+    
+    etcdmain_startEtcdProxy->svrcfg
+    embed_StartEtcd->etcdcfg
+    embed_StartEtcd->etcdserver_new
+    embed_StartEtcd->embed_Etcd
+    
+    main->etcdmain_main->etcdmain_startEtcdProxy->etcdmain_StartEtcd->embed_StartEtcd->etcdserver_Start->etcdserver_start->etcdserver_run
+    embed_StartEtcd->"embed/etcd.go:\n Etcd.servePeers()"
+    embed_StartEtcd->serve_client->"etcdhttp.NewPeerHandler()"
+    serve_client->"v3rpc.Server()"->rpc_svr
+    serve_client->"http.Server{}"
+    embed_StartEtcd->"embed/etcd.go:\n Etcd.serveMetrics()"
+}

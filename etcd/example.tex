@@ -1,0 +1,139 @@
+
+\mylineskip
+\chapter{etcd编译安装}\label{chaper:ch1}
+\section{golang环境}
+当然在安装etcd前要先安装go。并且设置好GOPATH。可以用apt,yum或者源码安装，下载二进制安装等方式。
+\myfig{golang环境变量}{fig:s1}{0.9}{images/golang_env.png}
+
+\section{etcd编译安装}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=16pt]{shell}
+#etcd编译
+mkdir -p  $GOPATH/src/go.etcd.io/
+cd $GOPATH/src/go.etcd.io/
+git clone https://github.com/etcd-io/etcd.git
+./build
+./bin/etcd
+\end{minted}
+
+\myfig{etcd运行}{fig:s2}{0.9}{images/etcd_starting.png}
+
+\section{etcd编译文件build分析}
+	etcd的build文件如图\ref{fig:s3}所示。 golang的编译非常简洁快速。直接编译出了etcd和etcdctl两个可执行文件。
+
+\myfig{etcd build}{fig:s3}{0.9}{images/etcd_build.png}
+
+\section{etcd版本}
+	本书开写时的etcd的最新版本。如果看代码，要用与本书一致比较好。
+\myfig{etcd版本}{fig:s4}{0.9}{images/etcd_version.png}
+
+
+Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 所有数据类型见表\ref{tab:oftype}。至于详情可以参考~\cite{gzp}~和~\cite{nue}。
+\oftypetable
+ Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+ Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+ 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+ 面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+ 年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 为市场最新版本。跳转到第\ref{chaper:ch1}章。\href{http://www.baidu.com}{这里是百度}后面还有字
+ {\kaishu 这是楷体吗？}
+ 
+  Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+ Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+ 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+ 面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+ 年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 为市场最新版本。
+ {\kaishu 这是楷体吗？}
+\setlength{\abovedisplayskip}{0pt}
+\setlength{\belowdisplayskip}{0pt}
+ \begin{equation}\label{eq:fx}
+ f(x)=3x^{2}+6(x-2)-1
+ \end{equation}
+ \begin{equation}\label{eq:gx}
+g(x)=4x^{2}+6(x-8)+1
+\end{equation}
+ \begin{equation}\label{eq:zn}
+E=mc^2
+\end{equation}
+  Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+ Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+ 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+ 面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+ 年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 为市场最新版本。质能公式如公式\eqref{eq:zn}。
+ {\kaishu 这是楷体吗？}
+ \subsection{画布操作}
+ \begin{enumerate}
+ 	\item 新建画布 \tab Ctrl + N
+ 	\item 画布切换 \tab F
+ 	\item 复位工作区 \tab Alt -> W -> K -> R
+ 	\item 放大缩小 \tab Alt + 鼠标滚轮(Ctrl + +, Ctrl + -)
+ 	\item 缩放工具 \tab Z(放大：鼠标点击画布，或按下Alt点击画布，可以放大缩小)
+ 	\item 移动画布 \tab Space + 鼠标左键按下拖动
+ 	\item 切换画布 \tab Ctrl + Tab
+ 	\item 显示网格 \tab Ctrl + '
+ 	\item 显示参考线 \tab Ctrl + ;
+ 	\item 显示标尺 \tab Ctrl + R
+ \end{enumerate}
+  Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+ Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+ 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+ 面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+ 年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 为市场最新版本。
+ {\kaishu 这是楷体吗？}
+ 
+  Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+ Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+ 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+ 面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+ 年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 为市场最新版本。
+	\begin{figure}[!ht]
+		\begin{center}
+		\setlength{\belowcaptionskip}{10pt}
+		\includegraphics[width=0.6\textwidth]{images/img1.jpg}
+		\caption{风景1}\label{fig:s1}
+		\end{center}
+	\end{figure}
+\myfig{风景2}{fig:s2}{0.6}{images/img2.jpg}
+  Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+ Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+ 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+ 面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+ 年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 为市场最新版本。如图\ref{fig:s1}所示，又如图\ref{fig:s2}所示。
+ {\kaishu 这是楷体吗？}
+ 
+  Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+ Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+ 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+ 面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+ 年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 为市场最新版本。
+ {\kaishu 这是楷体吗？}
+ 
+  Adobe Photoshop，简称“PS”，是由Adobe Systems开发和发行的图像处理软件。
+ Photoshop主要处理以像素所构成的数字图像。使用其众多的编修与绘图工具，可以
+ 有效地进行图片编辑工作。PS有很多功能，在图像、图形、文字、视频、出版等各方
+ 面都有涉及。2003年，Adobe Photoshop 8被更名为Adobe Photoshop CS。2013
+ 年7月，Adobe公司推出了新版本的Photoshop CC，自此，Photoshop CS6作为Adobe
+ CS系列的最后一个版本被新的CC系列取代。截止2016年12月Adobe PhotoshopCC2017
+ 为市场最新版本。
+ {\kaishu 这是楷体吗？}
+ 
+\subsection{phtotshop简介}
+ \newpage
