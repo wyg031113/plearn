@@ -1,9 +1,298 @@
 
 \mylineskip
 \chapter{etcd server分析}
+\section{源码分析方法}
+\subsection{配置文件法}
+一般在看一个服务器的代码，可以从其配置文件入手。比如etcd,我们知道etcd服务器启动后必然会监听
+一个端口来与客户端通信，同时也会监听一个端口与其他etcd服务器通信(这是因为RAFT算法中需要多个结点)。
+etcd的启动配置见附录\ref{code_appendix_etcd_help}
+
+\subsection{日志法}
+看server的日志是了解代码执行路径的比较好的办法。可以偿试打开server的DEBUG日志，得到更新详细的日志。
+还可以自己手动在代码加入日志，这就需要重新编译server。但是像golang这种编译速度比较快的可以一试。如
+果是C++等编译比较慢的语言，将严重影响分析源码的效率。
+
+\subsection{调试跟踪法}
+在进一步跟踪代码的过程，经常会遇到虚函数,接口，框架。导致跟踪断开。这也表示，代码走到了更低一层。而一般开源代码
+也不会有文档明确指出这一层提供的所有接口，以及用法。这就需要用调试器进一步跟踪。可以利用调试器的watch指令
+来监控某个socket或者说变量的引用。同时在客户端发送请求。就可以进一步跟踪到框架底层。
+
+\subsection{框架预习法}
+如果代码中使用了框架，先花上几小时熟悉这个框架的用法。甚至花几天去熟习也很值。比如etcd中的用了GRPC框架，用了http2,
+用了golang自带的http2的库。如果对这些不熟悉，那分析源码将会举步维艰。
+
+\subsection{GRPC框架}
+GRPC框架支持多语言,并且使用了ProtoBuffer。ProtoBuffer是一种高效的序列化反序列化通信协议。增加字段后能兼容增加字段
+前的协议，再也不用担心一个协议字段的添加而导致客户端服务器转文不兼容了。 同时，ProtoBuffer定义了一种新语法来定义协议
+字段。 这些协议的定义会被放在proto文件里。再由protoc命令加一些插件来生成不同语言的代码。 比如golang,就会生成pb.go。
+原来的proto文件中定义的message会被转换成golang的struct。当然如果生成java代码就会转成java的class文件。
+
+GRPC不但通过proto来定义RPC通信协议，同时也定义RPC服务器客户端的接口(其实就是一个个函数)。然后用GRPC的的插件+protoc来
+生成RPC服务器和客户端的代码。 这此代码会把需要我们实现的RPC接口暴露出来，我们只需要实现这些接口就能实现RPC调用。同时客户端
+接口也已经生成，我们自己只要调用生成的客户端接口，就能调用远程RPC服务器上的代码。Proto定义如下图。
+
+proto定义：
+\inputminted[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{proto}{source/grpc/helloworld/helloworld/helloworld.proto}
+
+
+服务器实现:
+\inputminted[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{go}{source/grpc/helloworld/greeter_server/main.go}
+
+客户端调用:
+\inputminted[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{go}{source/grpc/helloworld/greeter_client/main.go}
+
+
+\subsection{GRPC安装}
+国内可能访问不了google的某些域名，可以从github来下载包。然后移动到对应的目录下。如果编译时发现缺少某些包，还是如这般操作，
+直到把依赖的包都下载下来.
+
+
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{shell}
+#GRPC安装
+
+#protoc的golang插件
+go get github.com/golang/protobuf/protoc-gen-go 
+#golang测试框架
+go get github.com/golang/mock/gomock
+#GRPC,先从github上下载，然后移动并重命名到src/google.golang.org/grpc
+go get github.com/grpc/grpc-go ; mkdir -p $(GOPATH)/src/google.golang.org; mv $(GOPATH)/src/github.com/grpc/grpc-go $(GOPATH)/src/google.golang.org/grpc
+
+#GRPC依赖库安装
+
+#x库
+GOPATH=`go env GOPATH`
+mkdir -p $(GOPATH)/src/golang.org/x
+cd $(GOPATH)/src/golang.org/x
+git clone https://github.com/golang/net.git net
+git clone https://github.com/golang/text
+git clone https://github.com/golang/sys
+
+#GRPC生成GRPC服务器用的库
+cd $(GOPATH)/src/google.golang.org
+git clone https://github.com/googleapis/go-genproto.git genproto
+
+#跑个例子看有没有安装好
+启动server: go run google.golang.org/grpc/examples/helloworld/greeter_server/main.go
+启动client: go run google.golang.org/grpc/examples/helloworld/greeter_client/main.go
+启动test:   go test  -test.v google.golang.org/grpc/examples/helloworld/mock_helloworld/hw_mock_test.go
+\end{minted}
 \section{etcd启动调用关系}
 etcd服务器启动，会启动 很模块，对外主要是处理客户端请求，对内有etcd多个服务器进程之间通信，
 也有etcd服务器内部的功能，比如KV存储，WAL日志等。源码分析第一步，搞清楚etcd的启动初始化步骤。
 见图\ref{fig:ch2s1}和图\ref{fig:ch2s2}。
 \myfig{etcd的dlv调用栈}{fig:ch2s1}{0.9}{images/etcd_start_stack_trace.png}
 \myfig{etcd的启动初始化}{fig:ch2s2}{0.9}{images/etcd_dot/etcd_start.png}
+\subsection{从监听地址出发分析etcd如何处理客户端请求}
+etcd的启动参数里有--listen-client-urls 'http://localhost:2379"这么一项，见附录\ref{code_appendix_etcd_help}。
+这便是etcd为处理客户端请求而监听的地址。通过搜索代码，得到\ref{code_etcd_use_listen_client_config}。然后找cfg.ec.LCUrls
+的引用位置。然后发现在【embed/etcd.go:ConfigureClientListeners】中使用了LCUrs,并且监听了这个地址。使用的就是golang
+的net库。ConfigureClientListeners是在【embed/etcd.go】中的StartEtcd(inCfg)调用,调用图见\ref{fig:ch2s2}。StartEtcd是etcd
+服务器的总控。这里启动了所有的服务。由于Golang的协程特性，可能在随时启动一个协程去服务。Start可能只是在启动协议前做一些初始化，
+比如HTTP服务就需要提前注册各种处理URL的handler。
+\label{code_etcd_use_listen_client_config}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{shell}
+#中使用listen-client-urls
+root@dockervm:~/go/src/go.etcd.io/etcd# find . -type f -name "*.go"|xargs grep -n 'listen-client-urls'
+./etcdmain/config.go:139:               flags.NewUniqueURLsWithExceptions(embed.DefaultListenClientURLs, ""), "listen-client-urls",
+./etcdmain/config.go:330:       cfg.ec.LCUrls = flags.UniqueURLsFromFlag(cfg.cf.flagSet, "listen-client-urls")
+#使用LCURLs的代码
+root@dockervm:~/go/src/go.etcd.io/etcd# find . -type f -name "*.go"|xargs grep -n 'LCUrls'
+//下边两行是在StartProxy里的，如果不是Proxy就不会走到这里
+./etcdmain/etcd.go:510: for _, u := range cfg.ec.LCUrls {
+./etcdmain/etcd.go:531: for _, u := range cfg.ec.LCUrls {
+./etcdmain/config.go:330:       cfg.ec.LCUrls = flags.UniqueURLsFromFlag(cfg.cf.flagSet, "listen-client-urls")
+./tools/etcd-dump-metrics/etcd.go:55:   cfg.LCUrls, cfg.ACUrls = curls, curls
+./embed/etcd.go:609:    for _, u := range cfg.LCUrls { #这里是非proxy启动会走到的地方
+./embed/config.go:181:  LPUrls, LCUrls []url.URL
+
+
+\end{minted}
+
+\label{code_etcd_all_server_start}
+\begin{minted}[linenos, tabsize=4, firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{go}
+//使用listen-client-urls
+func configureClientListeners(cfg *Config) (sctxs map[string]*serveCtx, err error) {
+	if err = updateCipherSuites(&cfg.ClientTLSInfo, cfg.CipherSuites); err != nil {
+		return nil, err
+	}
+	if err = cfg.ClientSelfCert(); err != nil {
+		if cfg.logger != nil {
+			cfg.logger.Fatal("failed to get client self-signed certs", zap.Error(err))
+		} else {
+			plog.Fatalf("could not get certs (%v)", err)
+		}
+	}
+	if cfg.EnablePprof {
+		if cfg.logger != nil {
+			cfg.logger.Info("pprof is enabled", zap.String("path", debugutil.HTTPPrefixPProf))
+		} else {
+			plog.Infof("pprof is enabled under %s", debugutil.HTTPPrefixPProf)
+		}
+	}
+	
+	sctxs = make(map[string]*serveCtx)
+	for _, u := range cfg.LCUrls {//可见可以监听多个地上，一般只有一个
+		sctx := newServeCtx(cfg.logger)
+		if u.Scheme == "http" || u.Scheme == "unix" {
+			// ......
+		}
+		if (u.Scheme == "https" || u.Scheme == "unixs") && cfg.ClientTLSInfo.Empty() {
+			return nil, fmt.Errorf("TLS key/cert (--cert-file, --key-file) must be provided for client url %s with HTTPS scheme", u.String())
+		}
+		
+		network := "tcp"
+		addr := u.Host
+		if u.Scheme == "unix" || u.Scheme == "unixs" {
+			network = "unix"
+			addr = u.Host + u.Path
+		}
+		sctx.network = network
+		
+		sctx.secure = u.Scheme == "https" || u.Scheme == "unixs"
+		sctx.insecure = !sctx.secure
+		if oldctx := sctxs[addr]; oldctx != nil {
+			oldctx.secure = oldctx.secure || sctx.secure
+			oldctx.insecure = oldctx.insecure || sctx.insecure
+			continue
+		}
+		//这里监听了地址，sctx.l
+		if sctx.l, err = net.Listen(network, addr); err != nil {
+			return nil, err
+		}
+		// net.Listener will rewrite ipv4 0.0.0.0 to ipv6 [::], breaking
+		// hosts that disable ipv6. So, use the address given by the user.
+		sctx.addr = addr
+		
+		if fdLimit, fderr := runtimeutil.FDLimit(); fderr == nil {
+			// ......
+			sctx.l = transport.LimitListener(sctx.l, int(fdLimit-reservedInternalFDNum))
+		}
+		
+		if network == "tcp" {
+			if sctx.l, err = transport.NewKeepAliveListener(sctx.l, network, nil); err != nil {
+				return nil, err
+			}
+		}
+		
+		defer func() {
+			if err == nil {
+				return
+			}
+			sctx.l.Close() //如果有什么错误就停止监听
+			// ......
+		}()
+		for k := range cfg.UserHandlers {
+			sctx.userHandlers[k] = cfg.UserHandlers[k]
+		}
+		sctx.serviceRegister = cfg.ServiceRegister
+		if cfg.EnablePprof || cfg.Debug {
+			sctx.registerPprof()
+		}
+		if cfg.Debug {
+			sctx.registerTrace()
+		}
+		sctxs[addr] = sctx //保存一个sctx
+	}
+	return sctxs, nil
+}
+
+//在【embed/etcd.go】中的StartEtcd(inCfg)调用了configureClientListeners
+func StartEtcd(inCfg *Config) (e *Etcd, err error) {
+	//.......
+	serving := false
+	e = &Etcd{cfg: *inCfg, stopc: make(chan struct{})}
+	cfg := &e.cfg
+	
+	//.......
+	
+	//这里监听的地址是server之间通信的地址
+	if e.Peers, err = configurePeerListeners(cfg); err != nil {
+		return e, err
+	}
+	
+	//.......
+	
+	//这里监听的地址是server与client之间通信的地址
+	if e.sctxs, err = configureClientListeners(cfg); err != nil {
+		return e, err
+	}
+	
+	//把listen状态的conn放到了e.Clients中，只用于服务器退出时关闭,可以检查所有
+	//用到e.Clients的地方
+	for _, sctx := range e.sctxs {
+		e.Clients = append(e.Clients, sctx.l) 
+	}
+	
+	//.......
+	
+	srvcfg := etcdserver.ServerConfig{
+		Name:                       cfg.Name,
+		ClientURLs:                 cfg.ACUrls,
+		PeerURLs:                   cfg.APUrls,
+		DataDir:                    cfg.Dir,
+		DedicatedWALDir:            cfg.WalDir,
+		//.......
+	}
+	print(e.cfg.logger, *cfg, srvcfg, memberInitialized)
+	if e.Server, err = etcdserver.NewServer(srvcfg); err != nil {
+		return e, err
+	}
+	
+	//.......
+	//etcd服务启动
+	e.Server.Start()
+	//server之间服务启动
+	if err = e.servePeers(); err != nil {
+		return e, err
+	}
+	//处理客户端请求的服务启动
+	if err = e.serveClients(); err != nil {
+		return e, err
+	}
+	
+	//
+	if err = e.serveMetrics(); err != nil {
+		return e, err
+	}
+	
+	//......
+	serving = true
+	return e, nil
+}
+\end{minted}
+
+\subsection{用调试器跟踪法继续分析客户端请求}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{shell}
+#使用调试器dlv调试服务器监听端口
+#先安装好dlv
+#同时修改etcd/build文件如下：和原来的相比加了-gcflags,这样dlv才能打印变量值
+etcd_build() {
+out="bin"
+if [[ -n "${BINDIR}" ]]; then out="${BINDIR}"; fi
+toggle_failpoints_default
+
+# Static compilation is useful when etcd is run in a container. $GO_BUILD_FLAGS is OK
+# shellcheck disable=SC2086
+CGO_ENABLED=0 go build $GO_BUILD_FLAGS \
+-gcflags=all="-N -l" \
+-installsuffix cgo \
+-ldflags "$GO_LDFLAGS" \
+-o "${out}/etcd" ${REPO_PATH} || return
+# shellcheck disable=SC2086
+CGO_ENABLED=0 go build $GO_BUILD_FLAGS \
+-gcflags=all="-N -l" \
+-installsuffix cgo \
+-ldflags "$GO_LDFLAGS" \
+-o "${out}/etcdctl" ${REPO_PATH}/etcdctl || return
+}
+
+#最后编译 ./build
+
+#开始调试
+root@dockervm:~/go/src/go.etcd.io/etcd# dlv --check-go-version=false exec ./bin/etcd
+Type 'help' for list of commands.
+(dlv) b embed.serve
+Breakpoint 1 set at 0xd3a9fb for go.etcd.io/etcd/embed.(*serveCtx).serve() ./embed/serve.go:85
+(dlv) c
+
+\end{minted}
