@@ -1,0 +1,63 @@
+digraph start {
+    graph [fontname="SimHei"]
+    node [shape=box, fontname="Microsoft Yahei" color=red]
+    edge [color=blue]
+    label="启动etcd"
+    rankdir="LR"
+    
+    Server [label="etcdserver/api/v3rpc/grpc.go:\n Server()" shape=box style=filled color=green]
+    
+    Server->RegisterKVServer->NewQuotaKVServer->"quota.go:quotaKVServer"
+                              NewQuotaKVServer->Range
+                              NewQuotaKVServer->Put
+                              NewQuotaKVServer->DeleteRange
+                              NewQuotaKVServer->Txn
+                              NewQuotaKVServer->Compact
+                              
+    Server->RegisterWatchServer->NewWatchServer->"watch.go:watchServer"
+                                 NewWatchServer->Watch
+                                 
+    Server->RegisterLeaseServer->NewQuotaLeaseServer->"quota.go:quotaLeaseServer"
+                                 NewQuotaLeaseServer->LeaseGrant
+                                 NewQuotaLeaseServer->LeaseRevoke
+                                 NewQuotaLeaseServer->LeaseKeepAlive
+                                 NewQuotaLeaseServer->LeaseTimeToLive
+                                 NewQuotaLeaseServer->LeaseLeases
+                                 
+    Server->RegisterClusterServer->NewClusterServer->"etcdserver/api/v3rpc/member.go:ClusterServer"
+                                   NewClusterServer->MemberAdd
+                                   NewClusterServer->MemberRemove
+                                   NewClusterServer->MemberUpdate
+                                   NewClusterServer->MemberList
+                                   NewClusterServer->MemberPromote
+                                   
+    Server->RegisterAuthServer->NewAuthServer->"etcdserver/api/v3rpc/auth.go:AuthServer"
+                                NewAuthServer->AuthEnable
+                                NewAuthServer->AuthDisable
+                                NewAuthServer->Authenticate
+                                NewAuthServer->UserAdd
+                                NewAuthServer->UserGet
+                                NewAuthServer->UserList
+                                NewAuthServer->UserDelete
+                                NewAuthServer->UserChangePassword
+                                NewAuthServer->UserGrantRole
+                                NewAuthServer->UserRevokeRole
+                                NewAuthServer->RoleAdd
+                                NewAuthServer->RoleGet
+                                NewAuthServer->RoleList
+                                NewAuthServer->RoleDelete
+                                NewAuthServer->RoleGrantPermission
+                                NewAuthServer->RoleRevokePermission
+
+                                
+                                
+    Server->RegisterMaintenanceServer->NewMaintenanceServer->"etcdserver/api/v3rpc/maintenance.go:maintenanceServer"
+                                       NewMaintenanceServer->Alarm
+                                       NewMaintenanceServer->Status
+                                       NewMaintenanceServer->Defragment
+                                       NewMaintenanceServer->Hash
+                                       NewMaintenanceServer->HashKV
+                                       NewMaintenanceServer->Snapshot
+                                       NewMaintenanceServer->MoveLeader
+    Server->"health.NewServer()"
+ }

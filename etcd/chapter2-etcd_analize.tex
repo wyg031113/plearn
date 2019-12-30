@@ -309,7 +309,10 @@ Breakpoint 1 set at 0xd3a9fb for go.etcd.io/etcd/embed.(*serveCtx).serve() ./emb
 文件后对ETCD服务器提供的RPC服务一目了然。然后就是找到这些接口的实现和注册。看看生成的rpc.pb.go文件，了解了接口，和注册函数RegisterKVServer。
 然后再代码里搜索一下RegisterKVServer得到【etcdserver/api/v3rpc/grpc.go:59】。同时我们知道GRPC的server的创建是调用grpc.NewServer(),
 同样搜索一下代码得到【./etcdserver/api/v3rpc/grpc.go:57:      grpcServer := grpc.NewServer(append(opts, gopts...)...)】。最后在协程中调用
-grpcServer.Serve()开始服务。
+grpcServer.Serve()开始服务。具体注册了哪些服务，见图\ref{fig:ers}。
+
+\myfig{etcd注册的RPC服务}{fig:ers}{0.9}{images/etcd_dot/etcd_rpc_service.png}
+
 \begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{shell}
 #搜索RegisterKVServer
 root@dockervm:~/go/src/go.etcd.io/etcd# find . -type f -name "*.go" |xargs grep -n -i 'RegisterKVServer'
@@ -331,4 +334,50 @@ root@dockervm:~/go/src/go.etcd.io/etcd# find . -type f -name "*.go" |xargs grep 
 
 etcd/etcdserver/api/v3rpc/grpc.go中Server的定义如下 。可以返回了grpc的Server。
 func Server(s *etcdserver.EtcdServer, tls *tls.Config, gopts ...grpc.ServerOption) *grpc.Server 
+\end{minted}
+
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{go}
+//ETCD提供了很多服务注册服务的代码。
+func Server(s *etcdserver.EtcdServer, tls *tls.Config, gopts ...grpc.ServerOption) *grpc.Server {
+	var opts []grpc.ServerOption
+	opts = append(opts, grpc.CustomCodec(&codec{}))
+	if tls != nil {
+		bundle := credentials.NewBundle(credentials.Config{TLSConfig: tls})
+		opts = append(opts, grpc.Creds(bundle.TransportCredentials()))
+	}
+	opts = append(opts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+	newLogUnaryInterceptor(s),
+	newUnaryInterceptor(s),
+	grpc_prometheus.UnaryServerInterceptor,
+	)))
+	opts = append(opts, grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+	newStreamInterceptor(s),
+	grpc_prometheus.StreamServerInterceptor,
+	)))
+	opts = append(opts, grpc.MaxRecvMsgSize(int(s.Cfg.MaxRequestBytes+grpcOverheadBytes)))
+	opts = append(opts, grpc.MaxSendMsgSize(maxSendBytes))
+	opts = append(opts, grpc.MaxConcurrentStreams(maxStreams))
+	//这里new了GRPC的服务
+	grpcServer := grpc.NewServer(append(opts, gopts...)...)
+	
+	//这里注册了一系统功能
+	pb.RegisterKVServer(grpcServer, NewQuotaKVServer(s))
+	pb.RegisterWatchServer(grpcServer, NewWatchServer(s))
+	pb.RegisterLeaseServer(grpcServer, NewQuotaLeaseServer(s))
+	pb.RegisterClusterServer(grpcServer, NewClusterServer(s))
+	pb.RegisterAuthServer(grpcServer, NewAuthServer(s))
+	pb.RegisterMaintenanceServer(grpcServer, NewMaintenanceServer(s))
+	
+	// server should register all the services manually
+	// use empty service name for all etcd services' health status,
+	// see https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more
+	hsrv := health.NewServer()
+	hsrv.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+	healthpb.RegisterHealthServer(grpcServer, hsrv)
+	
+	// set zero values for metrics registered for this grpc server
+	grpc_prometheus.Register(grpcServer)
+	
+	return grpcServer
+}
 \end{minted}
