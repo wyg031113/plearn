@@ -3,7 +3,16 @@
 \chapter{etcd编译安装}\label{chaper:ch1}
 \section{golang环境}
 当然在安装etcd前要先安装go。并且设置好GOPATH。可以用apt,yum或者源码安装，下载二进制安装等方式。
+从官网下载golang源码包。https://golang.org/dl/。
 \myfig{golang环境变量}{fig:s1}{0.9}{images/golang_env.png}
+
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt]{shell}
+wget https://golang.org/doc/install?download=go1.13.5.linux-amd64.tar.gz
+tar xvf go1.13.5.linux-amd64.tar.gz -C /usr/local
+并在vim ~/.bashrc加入
+export PATH=$PATH:/user/local/go/bin
+\end{minted}
+
 
 \section{etcd编译安装}
 \begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt]{shell}
