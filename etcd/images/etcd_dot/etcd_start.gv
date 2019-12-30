@@ -20,8 +20,13 @@ digraph start {
     etcdserver_run              [label="etcdserver/server.go:\n go EtcdServer.run()"]
     serve_client                [label="embed/etcd.go:\n Etcd.serveClients()"]
     rpc_svr                     [label="grpc.NewServer\n pb.RegisterKVServer\n pb.RegisterWatchServer\n pb.RegisterLeaseServer\n pb.RegisterClusterServer"]
+    configPearListener          [label="embed/etcd.go:\n Etcd.StartEtcd()"]
+    configClientListener        [label="embed/etcd.go:\n Etcd.StartEtcd() \n net.Listen :  cfg.LCUrls "]
+    ServerCtx                   [label="etcd/embed/serve.go\nServerCtx.Serve()"]
     
     etcdmain_startEtcdProxy->svrcfg
+    embed_StartEtcd->configPearListener
+    embed_StartEtcd->configClientListener
     embed_StartEtcd->etcdcfg
     embed_StartEtcd->etcdserver_new
     embed_StartEtcd->embed_Etcd
@@ -29,7 +34,8 @@ digraph start {
     main->etcdmain_main->etcdmain_startEtcdProxy->etcdmain_StartEtcd->embed_StartEtcd->etcdserver_Start->etcdserver_start->etcdserver_run
     embed_StartEtcd->"embed/etcd.go:\n Etcd.servePeers()"
     embed_StartEtcd->serve_client->"etcdhttp.NewPeerHandler()"
-    serve_client->"v3rpc.Server()"->rpc_svr
+    serve_client->ServerCtx -> "gs = v3rpc.Server()\n注册rpc.proto中实现的接口"
+    ServerCtx->"gs.serve()\n在协程中启用GRPC的serve"
     serve_client->"http.Server{}"
     embed_StartEtcd->"embed/etcd.go:\n Etcd.serveMetrics()"
 }

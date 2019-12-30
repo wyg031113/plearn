@@ -89,6 +89,8 @@ etcd的启动参数里有--listen-client-urls 'http://localhost:2379"这么一�
 的net库。ConfigureClientListeners是在【embed/etcd.go】中的StartEtcd(inCfg)调用,调用图见\ref{fig:ch2s2}。StartEtcd是etcd
 服务器的总控。这里启动了所有的服务。由于Golang的协程特性，可能在随时启动一个协程去服务。Start可能只是在启动协议前做一些初始化，
 比如HTTP服务就需要提前注册各种处理URL的handler。
+
+从监听地址来分析，依然是细节太多。大概能搞清楚服务器的启动初始化流程。但是对于分析一次客户端的请求过程这样的事儿还是显示力不从心。
 \label{code_etcd_use_listen_client_config}
 \begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{shell}
 #中使用listen-client-urls
@@ -262,6 +264,8 @@ func StartEtcd(inCfg *Config) (e *Etcd, err error) {
 \end{minted}
 
 \subsection{用调试器跟踪法继续分析客户端请求}
+此方法要谨慎使用，否则会陷入无限的细节当中不能自拔，进而会浪费大量时间。尤其是一开始分析源码的时候，
+会跟踪到底层，加上golang的协程交替执行，会让人一头雾水。
 \begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{shell}
 #使用调试器dlv调试服务器监听端口
 #先安装好dlv
@@ -295,4 +299,36 @@ Type 'help' for list of commands.
 Breakpoint 1 set at 0xd3a9fb for go.etcd.io/etcd/embed.(*serveCtx).serve() ./embed/serve.go:85
 (dlv) c
 
+\end{minted}
+
+\subsection{框架分析之ETCD的GRPC服务}
+这里才是分析源码最快的方法。没有一个服务器不使用框架，或使用自己写的框架。尤其是网络框架。比如HTTP,GRPC。在
+分析源码前，一定要花时间先把框架学习了。至少把框架的使用方法学习了。手动写几个框架的小应用更好。当然，框架实现
+细节可以延后学习。就比如ETCD使用的GRPC框架。在学习GRPC框架前，无论是看代码，调试程序，都没法找到ETCD是如何处理
+客户端请求的。直到学了GRPC框架，才恍然大悟，原来GRPC框架要求所有RPC服务接口都要定义在proto里。所以看了【etcdserver/etcdserverpb/rpc.proto】
+文件后对ETCD服务器提供的RPC服务一目了然。然后就是找到这些接口的实现和注册。看看生成的rpc.pb.go文件，了解了接口，和注册函数RegisterKVServer。
+然后再代码里搜索一下RegisterKVServer得到【etcdserver/api/v3rpc/grpc.go:59】。同时我们知道GRPC的server的创建是调用grpc.NewServer(),
+同样搜索一下代码得到【./etcdserver/api/v3rpc/grpc.go:57:      grpcServer := grpc.NewServer(append(opts, gopts...)...)】。最后在协程中调用
+grpcServer.Serve()开始服务。
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=10pt,breaklines,fontsize=\footnotesize]{shell}
+#搜索RegisterKVServer
+root@dockervm:~/go/src/go.etcd.io/etcd# find . -type f -name "*.go" |xargs grep -n -i 'RegisterKVServer'
+./proxy/grpcproxy/kv_test.go:88:        pb.RegisterKVServer(kvts.server, kvts.kp)
+./etcdmain/grpc_proxy.go:367:   pb.RegisterKVServer(server, kvp)
+./pkg/mock/mockserver/mockserver.go:135:        pb.RegisterKVServer(svr, &mockKVServer{})
+./etcdserver/api/v3rpc/grpc.go:59:      pb.RegisterKVServer(grpcServer, NewQuotaKVServer(s))
+./etcdserver/etcdserverpb/rpc.pb.go:3535:func RegisterKVServer(s *grpc.Server, srv KVServer) {
+
+#搜索grpc.NewServer
+root@dockervm:~/go/src/go.etcd.io/etcd# find . -type f -name "*.go" |xargs grep -n -i 'grpc\.NewServer'
+./proxy/grpcproxy/kv_test.go:87:        kvts.server = grpc.NewServer(opts...)
+./proxy/grpcproxy/cluster_test.go:109:  cts.server = grpc.NewServer(opts...)
+./etcdmain/grpc_proxy.go:361:   server := grpc.NewServer(
+./pkg/mock/mockserver/mockserver.go:134:        svr := grpc.NewServer()
+./etcdserver/api/v3rpc/grpc.go:57:      grpcServer := grpc.NewServer(append(opts, gopts...)...)
+./vendor/github.com/grpc-ecosystem/go-grpc-middleware/doc.go:24:        myServer := grpc.NewServer(
+./functional/agent/server.go:95:        srv.grpcServer = grpc.NewServer(opts...)
+
+etcd/etcdserver/api/v3rpc/grpc.go中Server的定义如下 。可以返回了grpc的Server。
+func Server(s *etcdserver.EtcdServer, tls *tls.Config, gopts ...grpc.ServerOption) *grpc.Server 
 \end{minted}
