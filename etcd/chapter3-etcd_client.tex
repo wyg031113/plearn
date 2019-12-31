@@ -75,5 +75,226 @@ echo
 echo client used endpoints:
 echo "$ENDPOINTS"
 
+\end{minted}
 
+\section{ETCD客户端命令}
+ETCD自还了一个etcdctl客户端工具。用它来熟悉基本功能十分好。
+\subsection{设置一些常用变量}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+EP=127.0.0.1:2379,127.0.0.1:2381,127.0.0.1:2383
+alias ec="../bin/etcdctl --endpoints=$EP"
+cd ~/go/src/go.etcd.io/etcd/etcd_cluster
+#~/go为GOPATH指定目录
+\end{minted}
+
+\subsection{基本的增删改查(get/put/del)}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+../bin/etcdctl --endpoints=$EP put foo "Hello, World"
+../bin/etcdctl --endpoints=$EP get foo
+../bin/etcdctl --endpoints=$EP --write-out="json" get foo
+\end{minted}
+
+\subsection{带前缀的查删(--prefix)}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#带前缀的查找:
+../bin/etcdctl --endpoints=$EP put web1 value1
+../bin/etcdctl --endpoints=$EP put web2 value2
+../bin/etcdctl --endpoints=$EP put web3 value3
+../bin/etcdctl --endpoints=$EP get web --prefix
+#输出：
+web1
+value1
+web2
+value2
+web3
+value3
+#带前缀的删除:
+../bin/etcdctl --endpoints=$EP put key myvalue
+../bin/etcdctl --endpoints=$EP put k1 value1
+../bin/etcdctl --endpoints=$EP put k2 value2
+#删除所有以k开头的键
+../bin/etcdctl --endpoints=$EP del k --prefix
+\end{minted}
+
+\subsection{事务(txn)}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#实现类型下面代码的功能
+#if value("user1") = "bad" :
+#    del user1
+#else:
+#    put user1 good
+ec put user1 bad
+ec txn --interactive
+compares:
+value("user1") = "bad"
+
+success requests (get, put, del):
+del user1
+
+failure requests (get, put, del):
+put user1 good
+
+SUCCESS
+
+1
+#上边最终会执行del user1
+\end{minted}
+
+\subsection{监听(watch)}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#需要开两个终端
+#终端1执行下面命令会阻塞
+ec watch stock --prefix
+#终端2执行
+EP=127.0.0.1:2379,127.0.0.1:2381,127.0.0.1:2383
+alias ec="../bin/etcdctl --endpoints=$EP"
+ec put stock1 10
+ec put stock2 20
+#终端1上会显示
+PUT
+stock1
+10
+PUT
+stock2
+20
+\end{minted}
+
+\subsection{租约(lease)}
+租约可以认为是一个会定时删除的对象，这个对象超时删除时，会把与它绑定的所有key都连带删除。
+租约可以不断续租，也可以立即回收。
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#分配lease
+lease=`ec lease grant 5|awk '{print $2}'`
+echo "Lease:" $lease
+
+#设置k v时关联一个lease
+ec put sample value --lease=$lease
+echo "Get1:"
+ec get sample
+
+#保持lease存在
+ec lease keep-alive $lease & 
+#或者可以立即收回lease
+#ec lease lease revoke $lease
+sleep 10
+
+#依然可以获得
+echo "Get2:"
+ec get sample
+
+#停止保持
+pkill etcdctl
+
+#5秒之后就自动删除了
+echo "Sleep 6 seconds"
+sleep 6
+echo "Get3:"
+ec get sample
+\end{minted}
+
+
+\subsection{分布式锁(lock)}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#term1执行：
+ec lock mutex1
+mutex1/93e6f5a8fafa72c
+
+#打印出这个表示获得了锁，并阻塞在这里了
+#term2执行:
+ec lock mutex1
+#直接阻塞了,因为锁被term1占用了
+
+#term1 CTRL+C停止，释放了锁
+^C
+
+#term2此时输出：
+mutex1/93e6f5a8fafa72f #表示获得了锁，并阻塞在这里,一直战胜
+\end{minted}
+
+\subsection{选主(elect)}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#ETCD多个服务器组成集群，其中要用一个来当Leader。也就是用RAFT算法选出Leader。
+ec elect one p1 &
+ec elect one p2 &
+\end{minted}
+
+\subsection{查看集群状态(status/health)}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#查看集群状态
+ec --write-out=table endpoint status
+
+将会输出:
+ ENDPOINT|ID|VERSION| DB SIZE | IS LEADER | IS LEARNER | 
+ RAFT TERM | RAFT INDEX | RAFT APPLIED INDEX | ERRORS 
+ 
+ec --write-out=table endpoint healt
+#将会输出:
+ENDPOINT    | HEALTH |    TOOK    | ERROR
+\end{minted}
+
+\subsection{生成快照(snapshot)}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#生成快照
+../bin/etcdctl --endpoints=$ENDPOINT_ONE snapshot save my.db
+#查看快照
+../bin/etcdctl --write-out=table --endpoints=$ENDPOINT_ONE snapshot status my.db
+\end{minted}
+
+\subsection{集群添加删除成员(member remove/add)}
+删除老的成员，加一个新的成员，而不是把老成员加回来。
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+ec --write-out=table member list
+
+#得到m2的member id
+m2_id=`ec member list|grep m2|awk -F ',' '{print $1}'`
+
+#删除member
+ec member remove $m2_id
+echo Sleep to wait removing $m2_id finish...
+sleep 5
+
+#添加新结点
+ec --write-out=table member list
+../bin/etcdctl --endpoints=127.0.0.1:2379,127.0.0.1:2383 member add m4 \
+--peer-urls=http://127.0.0.1:2386 
+
+echo "Sleep to wait add new member finish..."
+sleep 5
+
+#启动新结点，注册cluster和initial-cluster-state变了
+../bin/etcd --data-dir=data4 --name m4 \
+--initial-advertise-peer-urls http://127.0.0.1:2386 \
+--listen-peer-urls http://127.0.0.1:2386 \
+--advertise-client-urls http://127.0.0.1:2385 \
+--listen-client-urls http://127.0.0.1:2385 \
+--initial-cluster "m1=http://127.0.0.1:2380,\
+m4=http://127.0.0.1:2386,m3=http://127.0.0.1:2384" \
+--initial-cluster-state existing \
+--initial-cluster-token token-01 &
+
+echo "Sleep to wait new node starting..."
+sleep 5
+ec --write-out=table member list
+\end{minted}
+
+\subsection{认证(auth)}
+删除老的成员，加一个新的成员，而不是把老成员加回来。
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#添加角色
+ec role add root
+#给角色授权
+ec role grant-permission root readwrite foo
+#查看角色
+ec role get root
+#必须有一个叫root的user
+ec user add root
+#让用户担任某角色
+ec user grant-role root root
+#启用认证
+ec auth enable
+#读写
+ec --user=root:root put foo bar
+ec --user=root:root get foo
+#停止认证
+ec auth disable --user=root:root
 \end{minted}
