@@ -1,0 +1,79 @@
+\mylineskip
+\chapter{ETCD应用场景}\label{chaper:ch1}
+\section{ETCD集群}
+ETCD从集群必须是奇数个结点，每个结点要监听两个端口，一个是用于接收客户端请求(client-urls)，另一个用于接收集群中其他ETCD服务器的请求(peer-urls)。
+可以用docker或者多个机器来部署。每个机器一个ETCD服务器。这里用于测试，就在一个机器的不同端口上启动了三个ETCD服务器。
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+#启动三个etcd服务器组成一个集群
+#可以把下面的脚本放在
+#root/go/src/go.etcd.io/etcd/etcd_cluster目录下。然后执行，就能构建出一个集群了。其中/root/go是GOPATH目录。
+TOKEN=token-01
+CLUSTER_STATE=new
+NAME_1=m1
+NAME_2=m2
+NAME_3=m3
+#在同一个机器可以用不同的端口
+HOST_1=127.0.0.1
+HOST_2=127.0.0.1
+HOST_3=127.0.0.1
+
+CLIENT_PORT_1=2379
+PEER_PORT_1=2380
+CLIENT_PORT_2=2381
+PEER_PORT_2=2382
+CLIENT_PORT_3=2383
+PEER_PORT_3=2384
+
+#data目录用来存放结点数据
+DATA1=data1
+DATA2=data2
+DATA3=data3
+CLUSTER=${NAME_1}="http://${HOST_1}:$PEER_PORT_1,\
+${NAME_2}=http://${HOST_2}:$PEER_PORT_2,\
+${NAME_3}=http://${HOST_3}:$PEER_PORT_3"
+
+#分别启动三个结点
+$etcd --data-dir=$DATA1 --name ${NAME_1} \
+--initial-advertise-peer-urls http://${HOST_1}:$PEER_PORT_1 \
+--listen-peer-urls http://$HOST_1:$PEER_PORT_1 \
+--advertise-client-urls http://$HOST_1:$CLIENT_PORT_1 \
+--listen-client-urls http://${HOST_1}:$CLIENT_PORT_1 \
+--initial-cluster ${CLUSTER} \
+--initial-cluster-state ${CLUSTER_STATE} \
+--initial-cluster-token ${TOKEN} &
+
+$etcd --data-dir=$DATA2 --name ${NAME_2} \
+--initial-advertise-peer-urls http://${HOST_2}:$PEER_PORT_2 \
+--listen-peer-urls http://$HOST_2:$PEER_PORT_2 \
+--advertise-client-urls http://$HOST_2:$CLIENT_PORT_2 \
+--listen-client-urls http://${HOST_2}:$CLIENT_PORT_2 \
+--initial-cluster ${CLUSTER} \
+--initial-cluster-state ${CLUSTER_STATE} \
+--initial-cluster-token ${TOKEN} &
+
+$etcd --data-dir=$DATA3 --name ${NAME_3} \
+--initial-advertise-peer-urls http://${HOST_3}:$PEER_PORT_3 \
+--listen-peer-urls http://$HOST_3:$PEER_PORT_3 \
+--advertise-client-urls http://$HOST_3:$CLIENT_PORT_3 \
+--listen-client-urls http://${HOST_3}:$CLIENT_PORT_3 \
+--initial-cluster ${CLUSTER} \
+--initial-cluster-state ${CLUSTER_STATE} \
+--initial-cluster-token ${TOKEN} &
+
+#ENDPONTS是给etcdctl用的
+export ETCDCTL_API=3
+export ENDPOINTS="$HOST_1:$CLIENT_PORT_1,\
+$HOST_2:$CLIENT_PORT_2,\
+$HOST_3:$CLIENT_PORT_3"
+
+echo waiting for etcd server cluster init ...
+sleep 5
+echo
+echo List all members in cluster:
+$etcdctl --endpoints=$ENDPOINTS member list
+echo
+echo client used endpoints:
+echo "$ENDPOINTS"
+
+
+\end{minted}
