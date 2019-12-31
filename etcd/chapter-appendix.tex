@@ -2,10 +2,12 @@
 \mylineskip
 %minted使用参考ftp://ftp.dante.de/tex-archive/macros/latex/contrib/minted/minted.pdf
 
-\usemintedstyle[c++]{vs} %查看支持的样式：命令行中执行pygmentize -L styles; 支持的语言： pygmentize -L lexers
+\usemintedstyle[sh]{vs} %查看支持的样式：命令行中执行pygmentize -L styles; 支持的语言： pygmentize -L lexers
 \renewcommand{\theFancyVerbLine}{\sffamily\textcolor[rgb]{0.6,0.2,0.3}{\normalsize\oldstylenums{\arabic{FancyVerbLine}}}}
+
+\section{ETCD启动参数}
 {\noindent etcd配置参数}\label{code_appendix_etcd_help}
-\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{bash}
+\begin{minted}[linenos,firstnumber=1, fontfamily=tt, baselinestretch=0.7, numberblanklines=false, style=vs,xleftmargin=20pt,breaklines]{sh}
 root@dockervm:~/go/src/go.etcd.io/etcd# pwd
 /root/go/src/go.etcd.io/etcd
 root@dockervm:~/go/src/go.etcd.io/etcd# ./bin/etcd --help
@@ -210,57 +212,4 @@ Specify a particular log level for each etcd package (eg: 'etcdmain=CRITICAL,etc
 
 \end{minted}
 
-{\noindent 示例2 C\#代码}
-\begin{minted}[mathescape,
-    linenos,
-    numbersep=5pt,
-    gobble=2,
-    frame=lines,
-    framesep=2mm]{csharp}
-    string title = "This is a Unicode π in the sky"
-    /*
-    Defined as $\pi=\lim_{n\to\infty}\frac{P_n}{d}$ where $P$ is the perimeter
-    of an $n$-sided regular polygon circumscribing a
-    circle of diameter $d$.
-    */
-    const double pi = 3.1415926535
-\end{minted}
 
-
-%使用listings
-\lstset{
-    columns=fixed,       
-    numbers=left,                                        % 在左侧显示行号
-    numberstyle=\tiny\color{gray},                       % 设定行号格式
-    frame=none,                                          % 不显示背景边框
-    backgroundcolor=\color[RGB]{245,245,244},            % 设定背景颜色
-    keywordstyle=\color[RGB]{40,40,255},                 % 设定关键字颜色
-    numberstyle=\footnotesize\color{darkgray},           
-    commentstyle=\it\color[RGB]{0,96,96},                % 设置代码注释的格式
-    stringstyle=\rmfamily\slshape\color[RGB]{128,0,0},   % 设置字符串格式
-    showstringspaces=false,                              % 不显示字符串中的空格
-    language=c++,                                        % 设置语言
-}
-\begin{lstlisting}[language={c++}]
-#include  <stdio.h>
-
-int main(){
-    int  sum=0;
-    int  num=1;
-    int  sum2=0;
-    int  num2=2;
-    while(num<100){
-        sum=sum+num;
-        num=num+2;
-    }
-    printf("奇数和为:%d\n",sum);
-    
-    while(num2<=100){
-        sum2=sum2+num2;
-        num2=num2+2;
-    }
-    printf("偶数和为：%d\n",sum2);
-}
-\end{lstlisting}
-
-\inputminted[breaklines=true]{c}{source/01.c}
